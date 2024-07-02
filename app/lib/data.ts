@@ -181,8 +181,8 @@ export async function fetchCustomers() {
       SELECT
          id,
         name,
-        email,
-        image_url
+        email,           
+        image_url 
       FROM customers
       ORDER BY name ASC
     `;
