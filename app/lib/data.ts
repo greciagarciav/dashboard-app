@@ -175,11 +175,14 @@ export async function fetchInvoiceById(id: string) {
 }
 
 export async function fetchCustomers() {
+  noStore();
   try {
     const data = await sql<CustomerField>`
       SELECT
-        id,
-        name
+         id,
+        name,
+        email,
+        image_url
       FROM customers
       ORDER BY name ASC
     `;
