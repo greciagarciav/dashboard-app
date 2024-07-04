@@ -129,3 +129,61 @@ export async function deleteInvoice(id: string) {
     return { message: 'Database Error: Failed to Delete Invoice.' };
   }
 }
+
+const CustomerFormSchema = z.object({
+  id: z.string(),
+  customerId: z.string({
+    invalid_type_error: 'Please select a customer.',
+    }
+  ),
+  name: z.string({
+      required_error: 'Please enter a name.',
+    }
+  ),
+  email: z.string({
+      required_error: 'Please enter an email.',
+    }
+  ),
+});
+
+export type CustomerState = {
+errors?: {
+  customerId?: string[];
+  name?: string[];
+  email?: string[];
+};
+message?: string | null;
+};
+
+const UpdateCustomer = CustomerFormSchema.omit({ id: true });
+
+export async function updateCustomer(id: string, prevState: CustomerState, formData: FormData) {
+
+  const validatedFields = UpdateCustomer.safeParse({
+    customerId: formData.get('customerId'),
+    name: formData.get('name'),
+    email: formData.get('email'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Update Customer.',
+    };
+  }
+
+  const { customerId, name, email } = validatedFields.data;
+
+  try {
+    await sql`
+        UPDATE customers
+        SET id = ${customerId}, name = ${name}, email = ${email}
+        WHERE id = ${id}
+      `;
+  } catch (error) {
+    return { message: 'Database Error: Failed to Update Customer.' };
+  }
+ 
+  revalidatePath('/dashboard/customers');
+  redirect('/dashboard/customers');
+}
