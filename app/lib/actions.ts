@@ -132,18 +132,10 @@ export async function deleteInvoice(id: string) {
 
 const CustomerFormSchema = z.object({
   id: z.string(),
-  customerId: z.string({
-    invalid_type_error: 'Please select a customer.',
-    }
-  ),
-  name: z.string({
-      required_error: 'Please enter a name.',
-    }
-  ),
-  email: z.string({
-      required_error: 'Please enter an email.',
-    }
-  ),
+  customerId: z.string(),
+  name: z.string({message: 'Please enter a name'}),
+  email: z.string({message: 'Please enter an email'}),
+  image_url:  z.string()
 });
 
 export type CustomerState = {
@@ -151,16 +143,51 @@ errors?: {
   customerId?: string[];
   name?: string[];
   email?: string[];
+  image_url?: string[];
 };
 message?: string | null;
 };
 
-const UpdateCustomer = CustomerFormSchema.omit({ id: true });
+const CreateCustomer = CustomerFormSchema.omit({id: true, customerId:true, image_url: true});
+
+export async function createCustomer(prevState: CustomerState, formData: FormData) {
+    
+    const validatedFields = CreateCustomer.safeParse({
+      name: formData.get('name'),
+      email: formData.get('email'),
+    });
+
+    console.log(validatedFields.error)
+    if (!validatedFields.success) {
+      return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Missing Fields. Failed to Create Invoice.',
+      };
+    }
+
+    const { name, email } = validatedFields.data;
+
+    try {
+      await sql`
+        INSERT INTO customers (name, email, image_url)
+        VALUES ( ${name}, ${email}, '')
+      `;
+    } catch (error) {
+      return {
+        message: 'Database Error: Failed to Create Customer.',
+      };
+    }
+
+    revalidatePath('/dashboard/customers');
+    redirect('/dashboard/customers');
+}
+
+
+const UpdateCustomer = CustomerFormSchema.omit({ id: true, customerId: true, image_url: true });
 
 export async function updateCustomer(id: string, prevState: CustomerState, formData: FormData) {
 
   const validatedFields = UpdateCustomer.safeParse({
-    customerId: formData.get('customerId'),
     name: formData.get('name'),
     email: formData.get('email'),
   });
@@ -172,12 +199,12 @@ export async function updateCustomer(id: string, prevState: CustomerState, formD
     };
   }
 
-  const { customerId, name, email } = validatedFields.data;
+  const { name, email } = validatedFields.data;
 
   try {
     await sql`
         UPDATE customers
-        SET id = ${customerId}, name = ${name}, email = ${email}
+        SET name = ${name}, email = ${email}
         WHERE id = ${id}
       `;
   } catch (error) {

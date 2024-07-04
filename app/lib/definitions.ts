@@ -97,5 +97,5 @@ export type CustomerForm = {
   customer_id: string;
   name: string;
   email: string;
-  // image_url: string;
+  image_url: string;
 };

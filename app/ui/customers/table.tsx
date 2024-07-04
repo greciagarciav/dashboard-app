@@ -76,8 +76,8 @@ export default async function CustomersTable({
                     Total Paid
                   </th> */}
                   <th scope="col" className="relative py-3 pl-6 pr-3">
-                  <span className="sr-only">Edit</span>
-                </th>
+                    <span className="sr-only">Edit</span>
+                  </th>
                 </tr>
               </thead>
 
