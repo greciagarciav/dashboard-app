@@ -133,9 +133,13 @@ export async function deleteInvoice(id: string) {
 const CustomerFormSchema = z.object({
   id: z.string(),
   customerId: z.string(),
-  name: z.string({message: 'Please enter a name'}),
-  email: z.string({message: 'Please enter an email'}),
-  image_url:  z.string()
+  name: z.string({
+    required_error: "Name is required",
+    invalid_type_error: "Name must be a string",}).min(1, { message: "Name cannot be empty" }),
+  email: z.string().email().min(1, { message: "Email cannot be empty" }),
+  image_url:  z.string({
+    required_error: "Image is required",
+  })
 });
 
 export type CustomerState = {
