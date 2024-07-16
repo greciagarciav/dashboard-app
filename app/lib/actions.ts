@@ -137,9 +137,7 @@ const CustomerFormSchema = z.object({
     required_error: "Name is required",
     invalid_type_error: "Name must be a string",}).min(1, { message: "Name cannot be empty" }),
   email: z.string().email().min(1, { message: "Email cannot be empty" }),
-  image_url:  z.string({
-    required_error: "Image is required",
-  })
+  image_url: z.any()
 });
 
 export type CustomerState = {
@@ -147,18 +145,19 @@ errors?: {
   customerId?: string[];
   name?: string[];
   email?: string[];
-  image_url?: string[];
+  image_url?: any;
 };
 message?: string | null;
 };
 
-const CreateCustomer = CustomerFormSchema.omit({id: true, customerId:true, image_url: true});
+const CreateCustomer = CustomerFormSchema.omit({id: true, customerId:true});
 
 export async function createCustomer(prevState: CustomerState, formData: FormData) {
     
     const validatedFields = CreateCustomer.safeParse({
       name: formData.get('name'),
       email: formData.get('email'),
+      image_url: formData.get('image_url'),
     });
 
     console.log(validatedFields.error)
@@ -169,12 +168,43 @@ export async function createCustomer(prevState: CustomerState, formData: FormDat
       };
     }
 
-    const { name, email } = validatedFields.data;
+    const uploadFile = async (pic:any) => {
+      try {
+        const formData = new FormData();
+        formData.append('file', pic);
+     
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+    
+        if (!response.ok) {
+          throw new Error('Failed to upload file');
+        }
+    
+        const result = await response.json();
+        console.log('File uploaded successfully:', result);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      }
+    };
+
+    const { name, email, image_url } = validatedFields.data;
 
     try {
+      console.log(image_url);
+      
+      uploadFile(image_url);
+    } catch (error) {
+      console.error(error);
+    }
+
+    try {
+      const filePath = "/customers/" + image_url.name;      
+
       await sql`
         INSERT INTO customers (name, email, image_url)
-        VALUES ( ${name}, ${email}, '')
+        VALUES ( ${name}, ${email}, ${filePath})
       `;
     } catch (error) {
       return {
